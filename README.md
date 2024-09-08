@@ -38,7 +38,7 @@ func main() {
 
 	failure, err := dig.Dig(v, "foo", "qux", "quux")
 	if err != nil {
-		// key qux not found in <nil>
+		// key qux not found in map[bar:map[baz:1]]
 		fmt.Println(err)
 	}
 	// foo.qux.quux = <nil>

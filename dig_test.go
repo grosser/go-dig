@@ -13,13 +13,31 @@ func TestStringKey(t *testing.T) {
 	if err := json.Unmarshal(jsonBlob, &v); err != nil {
 		t.Fatal(err)
 	}
-	success, err := Dig(v, "foo", "bar", "baz")
-	assert.Equal(t, float64(1), success, "foo.bar.baz should be 1")
+
+	// nested successful lookup
+	value, err := Dig(v, "foo", "bar", "baz")
+	assert.Equal(t, float64(1), value, "foo.bar.baz should be 1")
 	assert.Nil(t, err)
 
-	failure, err := Dig(v, "foo", "qux", "quux")
-	assert.Nil(t, failure)
-	assert.NotNil(t, err)
+	// semi-nested successful lookup
+	value, err = Dig(v, "foo", "bar")
+	assert.Equal(t, map[string]interface{}{"baz": float64(1)}, value)
+	assert.Nil(t, err)
+
+	// lookup without keys fails
+	value, err = Dig(v)
+	assert.Nil(t, value)
+	assert.Equal(t, "no key given", err.Error())
+
+	// nested failed lookup, qux does not exist
+	value, err = Dig(v, "foo", "qux", "quux")
+	assert.Nil(t, value)
+	assert.Equal(t, "key qux not found in map[bar:map[baz:1]]", err.Error())
+
+	// nested failed lookup, unsupported format
+	value, err = Dig(v, "foo", []int{1})
+	assert.Nil(t, value)
+	assert.Equal(t, "unsupported key type: [1]", err.Error())
 }
 
 func TestIntKey(t *testing.T) {
@@ -28,6 +46,7 @@ func TestIntKey(t *testing.T) {
 	if err := json.Unmarshal(jsonBlob, &v); err != nil {
 		t.Fatal(err)
 	}
+
 	success, err := Dig(v, "foo", 1)
 	assert.Equal(t, float64(11), success, "foo.bar.baz should be 1")
 	assert.Nil(t, err)
