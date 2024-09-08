@@ -3,15 +3,26 @@
 [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/mnogu/go-dig)](https://pkg.go.dev/mod/github.com/mnogu/go-dig)
 [![GitHub Actions](https://github.com/mnogu/go-dig/workflows/Go/badge.svg)](https://github.com/mnogu/go-dig/actions?query=workflow%3AGo)
 
-Go version of [`Hash#dig`](https://docs.ruby-lang.org/en/2.7.0/Hash.html#method-i-dig) and [`Array#dig`](https://docs.ruby-lang.org/en/2.7.0/Array.html#method-i-dig) in Ruby
+Access values in a deeply nested maps or slices.
 
-## Download and Install
+(Go version of [`Hash#dig`](https://docs.ruby-lang.org/en/2.7.0/Hash.html#method-i-dig) and [`Array#dig`](https://docs.ruby-lang.org/en/2.7.0/Array.html#method-i-dig) in Ruby)
+
+## Install
 
 ```
 $ go get -u github.com/mnogu/go-dig
 ```
 
 ## Examples
+
+```
+value, err := dig.Dig(nested, "foo", "bar", "baz") // get value out of {foo: {bar: {baz: value}}}
+value, err := dig.Dig(nested, "foo", 0, "baz")     // get value out of {foo: [{baz: value}]}
+```
+
+### Lookup in nested maps
+
+[Go playground](https://go.dev/play/p/c1t82Gfmice)
 
 ```go
 package main
@@ -29,22 +40,26 @@ func main() {
 	if err := json.Unmarshal(jsonBlob, &v); err != nil {
 		fmt.Println(err)
 	}
-	success, err := dig.Dig(v, "foo", "bar", "baz")
+	
+	// successful lookup
+	value, err := dig.Dig(v, "foo", "bar", "baz")
 	if err != nil {
 		fmt.Println(err)
 	}
-	// foo.bar.baz = 1
-	fmt.Println("foo.bar.baz =", success)
+	fmt.Println("foo.bar.baz =", value) // foo.bar.baz = 1
 
-	failure, err := dig.Dig(v, "foo", "qux", "quux")
+	// failed lookup
+	value, err = dig.Dig(v, "foo", "qux", "quux")
 	if err != nil {
-		// key qux not found in <nil>
-		fmt.Println(err)
+		fmt.Println(err) // key qux not found in <nil>
 	}
-	// foo.qux.quux = <nil>
-	fmt.Println("foo.qux.quux =", failure)
+	fmt.Println("foo.qux.quux =", value) // foo.qux.quux = <nil>
 }
 ```
+
+### Lookup in nested slices
+
+[Go Playground](https://go.dev/play/p/79CNgEoX6v-)
 
 ```go
 package main
@@ -62,27 +77,26 @@ func main() {
 	if err := json.Unmarshal(jsonBlob, &v); err != nil {
 		fmt.Println(err)
 	}
-	success, err := dig.Dig(v, "foo", 1)
-	if err != nil {
-		fmt.Println(err)
-	}
-	// foo.1 = 11
-	fmt.Println("foo.1 =", success)
 
-	failure, err := dig.Dig(v, "foo", 1, 0)
+	// successful lookup
+	value, err := dig.Dig(v, "foo", 1)
 	if err != nil {
-		// 11 isn't a slice
 		fmt.Println(err)
 	}
-	// foo.1.0 = <nil>
-	fmt.Println("foo.1.0 =", failure)
+	fmt.Println("foo.1 =", value) // foo.1 = 11
 
-	failure2, err := dig.Dig(v, "foo", "bar")
+	// failed lookup slice style in map
+	value, err = dig.Dig(v, "foo", 1, 0)
 	if err != nil {
-		// [10 11 12] isn't a map
-		fmt.Println(err)
+		fmt.Println(err) // 11 isn't a slice
 	}
-	// foo.bar = <nil>
-	fmt.Println("foo.bar =", failure2)
+	fmt.Println("foo.1.0 =", value) // foo.1.0 = <nil>
+
+	// failed lookup map style in slice
+	value, err = dig.Dig(v, "foo", "bar")
+	if err != nil {
+		fmt.Println(err) // [10 11 12] isn't a map
+	}
+	fmt.Println("foo.bar =", value) // foo.bar = <nil>
 }
 ```
